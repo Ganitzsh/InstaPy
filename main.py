@@ -40,7 +40,7 @@ try:
     session.set_do_comment(True, percentage=50)
     session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
     session.like_by_tags(amount=10, use_smart_hashtags=True)
-    session.clarifai_check_img_for(['selfie', 'people', 'person', 'portrait'])
+    session.clarifai_check_img_for(['face'])
     session.set_use_clarifai(enabled=True, api_key=clarifai_api_key)
     session.like_by_feed(amount=100, randomize=True, unfollow=False, interact=True)
 
