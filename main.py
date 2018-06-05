@@ -1,8 +1,20 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+import json
+from random import sample
 from instapy import InstaPy
+from pprint import pprint
 
-insta_username = ''
-insta_password = ''
+from selenium.common.exceptions import NoSuchElementException
+
+try:
+    with open('config.json') as f:
+        data = json.load(f)
+        insta_username = data['username']
+        insta_password = data['password']
+        clarifai_api_key = data['clarifai_api_key']
+    pass
+except Exception as e:
+    raise
 
 # set headless_browser=True if you want to run InstaPy on a server
 # try:
@@ -15,57 +27,33 @@ session = InstaPy(username=insta_username,
                   headless_browser=False,
                   multi_logs=True)
 try:
+    with open('resources.json') as f:
+        data = json.load(f)
+        comments = data['comments']
+        hashtags = data['hashtags']
+    pass
     session.login()
 
     # settings
-    session.set_comments([
-        'Cool shot! 📷',
-        'Nice one!',
-        'Really nice 🤩! Come visit our page sometimes 🙌',
-        'Great content! 😃',
-        'We like it!',
-        'Nailed it! 🤙',
-        'So cool! 🙌',
-        'Neat! 📸',
-        'Stunning 💫',
-        '👍'
-    ])
-    session.set_upper_follower_count(limit=750)
-    session.set_lower_follower_count(limit=400)
-    session.set_do_comment(True, percentage=25)
-    session.set_do_follow(enabled=True, percentage=5, times=2)
-    # session.set_user_interact(amount=4, randomize=True, percentage=100, media='Photo')
-
-    # actions
-    session.like_by_tags([
-        'toplisbonphoto',
-        'tilestyle',
-        'straightfacades',
-        'visitlisboa',
-        'wonderlustportugal',
-        'archilovers',
-        'cityshots',
-        'lisbonbuildings',
-        'colorfulhouses',
-        'cityviews',
-        'classicarchitecture',
-        'visiteurope',
-        'discovereurope',
-        'archdesign',
-        'buildingstyles',
-        'streetview',
-        'urbanscape',
-        'citylandscape',
-        'cityarchitecture'
-    ],
-    amount=30
-    # interact=True
-    )
-    # session.interact_user_followers(['topluxembourgphoto'], amount=50, randomize=True)
+    selection = sample(hashtags, 10) # Select 10 random hashtags
+    session.set_comments(selection)
+    session.set_do_comment(True, percentage=50)
+    session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
+    session.like_by_tags(amount=10, use_smart_hashtags=True)
+    session.clarifai_check_img_for(['selfie', 'people', 'person', 'portrait'])
+    session.set_use_clarifai(enabled=True, api_key=clarifai_api_key)
+    session.like_by_feed(amount=100, randomize=True, unfollow=False, interact=True)
 
 except Exception as exc:
+    # if changes to IG layout, upload the file to help us locate the change
+    if isinstance(exc, NoSuchElementException):
+        file_path = os.path.join(gettempdir(), '{}.html'.format(time.strftime('%Y%m%d-%H%M%S')))
+        with open(file_path, 'wb') as fp:
+            fp.write(session.browser.page_source.encode('utf8'))
+        print('{0}\nIf raising an issue, please also upload the file located at:\n{1}\n{0}'.format(
+            '*' * 70, file_path))
     # full stacktrace when raising Github issue
-    traceback.print_exc(exc)
+    raise
 
 finally:
     # end the bot session
