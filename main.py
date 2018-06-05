@@ -1,8 +1,8 @@
  # -*- coding: utf-8 -*-
 from instapy import InstaPy
 
-insta_username = 'onechillpic'
-insta_password = 'Laboratoire14!'
+insta_username = ''
+insta_password = ''
 
 # set headless_browser=True if you want to run InstaPy on a server
 # try:
