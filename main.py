@@ -37,7 +37,7 @@ try:
 
     # settings
     selection = sample(hashtags, 10) # Select 10 random hashtags
-    session.set_comments(selection)
+    session.set_comments(comments)
     session.set_do_comment(True, percentage=50)
     session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
     session.like_by_tags(amount=10, use_smart_hashtags=True)
