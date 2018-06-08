@@ -20,12 +20,13 @@ except Exception as e:
 # try:
     # set these if you're locating the library in the /usr/lib/pythonX.X/ directory
     # Settings.database_location = '/path/to/instapy.db'
-    # Settings.browser_location = '/path/to/chromedriver'
+
 
 session = InstaPy(username=insta_username,
                   password=insta_password,
-                  headless_browser=False,
+                  headless_browser=True,
                   multi_logs=True)
+
 try:
     with open('resources.json') as f:
         data = json.load(f)
