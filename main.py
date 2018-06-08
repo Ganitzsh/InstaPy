@@ -28,7 +28,7 @@ session = InstaPy(username=insta_username,
                   multi_logs=True)
 
 try:
-    with open('resources.json') as f:
+    with open('resources.json', encoding='utf-8') as f:
         data = json.load(f)
         comments = data['comments']
         hashtags = data['hashtags']
