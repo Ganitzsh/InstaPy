@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <h1>Current settings</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Hashtags</th>
+          <th>Comments</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            {{ range .Hashtags }}
+            <p>#{{.}}</p>
+            {{end}}
+          </td>
+          <td>
+            {{ range .Comments }}
+            <p>"{{.}}"</p>
+            {{end}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <p>The sample is the amount of hashtags that you wish to randomly pick from the list when the bot will run</p>
+    <h3>Sample</h3>
+    <p>Sample: {{.Sample}}</p>
+    <h1>Edit</h1>
+    <form class="" action="save" method="post">
+      <textarea name="hashtags" rows="20" cols="80">{{.HastagStr}}</textarea>
+      <textarea name="comments" rows="20" cols="80">{{.CommentStr}}</textarea><br>
+      Sample: <input type="text" name="sample" value="10" />
+      <button type="submit" name="button">Save</button>
+    </form>
+    <form class="" action="run" method="post">
+      <button type="submit" name="button">Start!</button>
+    </form>
+    <form class="" action="stop" method="post">
+      <button type="submit" name="button">STOP!</button>
+    </form>
+  </body>
+</html>

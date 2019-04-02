@@ -1,31 +1,27 @@
 {
-  "hashtags": [
-    "europeancities",
-    "exploringeurope",
-    "europeanarchitecture",
-    "flowersphotography",
-    "modernarchitecture",
-    "urbanarchitecture",
-    "facadelovers",
-    "beautifulbuildings",
-    "classicarchitecture",
-    "interiordetails",
-    "cityphotography",
-    "architexture",
-    "bitsofbuildings",
-    "floweringtrees"
-  ],
-  "comments": [
-    "Cool shot! 📷",
-    "Nice one!",
-    "Really nice 🤩! Come visit our page sometimes 🙌",
-    "Great content! 😃",
-    "We like it!",
-    "Nailed it! 🤙",
-    "So cool! 🙌",
-    "Neat! 📸",
-    "Stunning 💫",
-    "👍"
-  ]
+    "hashtags": [
+        "europeancities",
+        "exploringeurope",
+        "europeanarchitecture",
+        "flowersphotography",
+        "modernarchitecture",
+        "urbanarchitecture",
+        "facadelovers",
+        "beautifulbuildings",
+        "classicarchitecture",
+        "interiordetails",
+        "cityphotography",
+        "floweringtrees"
+    ],
+    "comments": [
+        "Cool shot! 📷",
+        "Nice one!",
+        "Really nice 🤩! Come visit our page sometimes 🙌",
+        "Great content! 😃",
+        "We like it!",
+        "Nailed it! 🤙",
+        "So cool! 🙌",
+        "Neat! 📸"
+    ],
+    "sample": 12
 }
-

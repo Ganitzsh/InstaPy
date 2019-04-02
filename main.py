@@ -24,7 +24,7 @@ except Exception as e:
 
 session = InstaPy(username=insta_username,
                   password=insta_password,
-                  headless_browser=True,
+                  headless_browser=False,
                   multi_logs=True)
 
 try:
@@ -32,18 +32,29 @@ try:
         data = json.load(f)
         comments = data['comments']
         hashtags = data['hashtags']
+        s = data['sample']
     pass
     session.login()
 
     # settings
-    selection = sample(hashtags, 10) # Select 10 random hashtags
-    session.set_comments(comments)
-    session.set_do_comment(True, percentage=50)
+    selection = sample(hashtags, s) # Select sample random hashtags
+    # session.set_comments(comments)
+    # session.set_do_comment(True, percentage=50)
     # session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
-    session.like_by_tags(selection, amount=10, use_smart_hashtags=False)
-    session.clarifai_check_img_for(['face'])
-    session.set_use_clarifai(enabled=True, api_key=clarifai_api_key)
-    session.like_by_feed(amount=100, randomize=True, unfollow=False, interact=False)
+    session.set_user_interact(amount=5, randomize=True, percentage=50, media='Photo')
+    session.set_relationship_bounds(enabled=True,
+                                potency_ratio=-1.25,
+                                max_followers=8500,
+                                max_following=4490,
+                                min_followers=300,
+                                min_following=150,
+                                min_posts=10,
+                                max_posts=1000
+    )
+    session.like_by_tags(selection, amount=s, use_smart_hashtags=False)
+    # session.clarifai_check_img_for(['face'])
+    # session.set_use_clarifai(enabled=True, api_key=clarifai_api_key)
+    session.like_by_feed(amount=100, randomize=True, unfollow=False, interact=True)
 
 except Exception as exc:
     # if changes to IG layout, upload the file to help us locate the change
