@@ -7,15 +7,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
 )
 
+type tmplcontent struct {
+	creds
+	res
+}
+
+type creds struct {
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+}
+
 type res struct {
 	Hashtags []string `json:"hashtags" form:"hashtags"`
 	Comments []string `json:"comments" form:"comments"`
 	Sample   int      `json:"sample" forn:"sample"`
+	Potency  string   `json:"potency" form:"potency"`
 }
 
 func (r res) HastagStr() string {
@@ -30,6 +42,9 @@ type saveReq struct {
 	Hashtags string `json:"hashtags" form:"hashtags"`
 	Comments string `json:"comments" form:"comments"`
 	Sample   int    `json:"sample" form:"sample"`
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+	Potency  string `json:"potency" form:"potency"`
 }
 
 var command *cmd.Cmd
@@ -86,7 +101,17 @@ func runBot(r *res) {
 
 func main() {
 	r := gin.Default()
-	b, err := ioutil.ReadFile("./resources.json")
+
+	b, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+		logrus.Fatalf("Could not read resources.json: %v", err)
+	}
+	credentials := creds{}
+	if e := json.Unmarshal(b, &credentials); e != nil {
+		logrus.Fatalf("Could not unmarshal resources: %v", e)
+	}
+
+	b, err = ioutil.ReadFile("./resources.json")
 	if err != nil {
 		logrus.Fatalf("Could not read resources.json: %v", err)
 	}
@@ -94,9 +119,13 @@ func main() {
 	if err := json.Unmarshal(b, &resources); err != nil {
 		logrus.Fatalf("Could not unmarshal resources: %v", err)
 	}
+
 	r.LoadHTMLFiles("./ui.html")
 	r.GET("/ui", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "ui.html", resources)
+		c.HTML(http.StatusOK, "ui.html", tmplcontent{
+			creds: credentials,
+			res:   resources,
+		})
 	})
 	r.POST("/run", func(c *gin.Context) {
 		go runBot(&resources)
@@ -110,19 +139,26 @@ func main() {
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
 	r.POST("/save", func(c *gin.Context) {
-		tmp := saveReq{}
-		if err := c.Bind(&tmp); err != nil {
+		req := saveReq{}
+		if err := c.Bind(&req); err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
+		spew.Dump(req)
 		newRes := res{
-			Hashtags: strings.Split(strings.Trim(tmp.Hashtags, "\r\n"), "\r\n"),
-			Comments: strings.Split(strings.Trim(tmp.Comments, "\r\n"), "\r\n"),
-			Sample:   tmp.Sample,
+			Hashtags: strings.Split(strings.Trim(req.Hashtags, "\r\n"), "\r\n"),
+			Comments: strings.Split(strings.Trim(req.Comments, "\r\n"), "\r\n"),
+			Sample:   req.Sample,
+			Potency:  req.Potency,
 		}
 		b, _ := json.MarshalIndent(newRes, "", "    ")
 		ioutil.WriteFile("./resources.json", b, 0655)
 		resources = newRes
+
+		credentials.Password = req.Password
+		credentials.Username = req.Username
+		b, _ = json.MarshalIndent(credentials, "", "    ")
+		ioutil.WriteFile("./config.json", b, 0655)
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
 	http.ListenAndServe(":8080", r)

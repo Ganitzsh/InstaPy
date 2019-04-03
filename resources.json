@@ -9,19 +9,11 @@
         "facadelovers",
         "beautifulbuildings",
         "classicarchitecture",
-        "interiordetails",
-        "cityphotography",
-        "floweringtrees"
+        "interiordetails"
     ],
     "comments": [
-        "Cool shot! 📷",
-        "Nice one!",
-        "Really nice 🤩! Come visit our page sometimes 🙌",
-        "Great content! 😃",
-        "We like it!",
-        "Nailed it! 🤙",
-        "So cool! 🙌",
-        "Neat! 📸"
+        ""
     ],
-    "sample": 12
+    "sample": 12,
+    "potency": "negative"
 }
