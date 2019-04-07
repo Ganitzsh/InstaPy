@@ -34,6 +34,7 @@ from .like_util import get_links_for_username
 from .like_util import like_comment
 from .login_util import login_user
 from .settings import Settings
+from .settings import localize_path
 from .print_log_writer import log_follower_num
 from .print_log_writer import log_following_num
 
@@ -105,7 +106,8 @@ class InstaPy:
                  disable_image_load=False,
                  bypass_suspicious_attempt=False,
                  bypass_with_mobile=False,
-                 multi_logs=True):
+                 multi_logs=True,
+                 split_db=False):
 
         cli_args = parse_cli_args()
         username = cli_args.username or username
@@ -119,6 +121,7 @@ class InstaPy:
         bypass_suspicious_attempt = (
             cli_args.bypass_suspicious_attempt or bypass_suspicious_attempt)
         bypass_with_mobile = cli_args.bypass_with_mobile or bypass_with_mobile
+        split_db = cli_args.split_db or split_db
 
         Settings.InstaPy_is_running = True
         # workspace must be ready before anything
@@ -146,6 +149,10 @@ class InstaPy:
         self.username = username or os.environ.get('INSTA_USER')
         self.password = password or os.environ.get('INSTA_PW')
         Settings.profile["name"] = self.username
+
+        self.split_db = split_db
+        if self.split_db:
+            Settings.database_location = localize_path("db", "instapy_{}.db".format(self.username))
 
         self.page_delay = page_delay
         self.use_firefox = use_firefox
@@ -237,6 +244,7 @@ class InstaPy:
         self.skip_business_categories = []
         self.dont_skip_business_categories = []
         self.skip_business = False
+        self.skip_non_business = False
         self.skip_no_profile_pic = False
         self.skip_private = True
         self.skip_business_percentage = 100
@@ -1173,6 +1181,7 @@ class InstaPy:
                                                 self.skip_no_profile_pic,
                                                 self.skip_no_profile_pic_percentage,
                                                 self.skip_business,
+                                                self.skip_non_business,
                                                 self.skip_business_percentage,
                                                 self.skip_business_categories,
                                                 self.dont_skip_business_categories,
@@ -1201,7 +1210,8 @@ class InstaPy:
                        skip_business=False,
                        business_percentage=100,
                        skip_business_categories=[],
-                       dont_skip_business_categories=[]):
+                       dont_skip_business_categories=[],
+                       skip_non_business=False):
 
         self.skip_business = skip_business
         self.skip_private = skip_private
@@ -1209,6 +1219,7 @@ class InstaPy:
         self.skip_business_percentage = business_percentage
         self.skip_no_profile_pic_percentage = no_profile_pic_percentage
         self.skip_private_percentage = private_percentage
+        self.skip_non_business = skip_non_business
         if skip_business:
             self.skip_business_categories = skip_business_categories
             if len(skip_business_categories) == 0:
@@ -1314,7 +1325,7 @@ class InstaPy:
                     self.jumps["consequent"]["likes"] = 0
                     break
 
-                self.logger.info('[{}/{}]'.format(i + 1, len(links)))
+                self.logger.info('Like# [{}/{}]'.format(i + 1, len(links)))
                 self.logger.info(link)
 
                 try:
@@ -1521,7 +1532,7 @@ class InstaPy:
                     self.jumps["consequent"]["comments"] = 0
                     break
 
-                self.logger.info('[{}/{}]'.format(i + 1, len(links)))
+                self.logger.info('Comment# [{}/{}]'.format(i + 1, len(links)))
                 self.logger.info(link)
 
                 try:
@@ -1728,7 +1739,7 @@ class InstaPy:
                     self.jumps["consequent"]["likes"] = 0
                     break
 
-                self.logger.info('[{}/{}]'.format(i + 1, len(links)))
+                self.logger.info('Like# [{}/{}]'.format(i + 1, len(links)))
                 self.logger.info(link)
 
                 try:
@@ -1882,7 +1893,8 @@ class InstaPy:
                 except NoSuchElementException as err:
                     self.logger.error('Invalid Page: {}'.format(err))
 
-        self.logger.info('Tag: {}'.format(tag.encode('utf-8')))
+            self.logger.info('Tag: {}'.format(tag.encode('utf-8')))
+        
         self.logger.info('Liked: {}'.format(liked_img))
         self.logger.info('Already Liked: {}'.format(already_liked))
         self.logger.info('Commented: {}'.format(commented))
@@ -4130,7 +4142,7 @@ class InstaPy:
                     self.jumps["consequent"]["follows"] = 0
                     break
 
-                self.logger.info('[{}/{}]'.format(i + 1, len(links)))
+                self.logger.info('Follow# [{}/{}]'.format(i + 1, len(links)))
                 self.logger.info(link)
 
                 try:
@@ -4253,7 +4265,7 @@ class InstaPy:
                     self.jumps["consequent"]["follows"] = 0
                     break
 
-                self.logger.info('[{}/{}]'.format(i + 1, len(links)))
+                self.logger.info('Follow# [{}/{}]'.format(i + 1, len(links)))
                 self.logger.info(link)
 
                 try:
