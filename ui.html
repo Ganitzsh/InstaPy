@@ -45,28 +45,28 @@
             <input name="password" type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value="{{.Password}}">
           </div>
           <div class="form-group">
-            <label for="exampleFormControlInput1"><strong>Sample</strong></label>
-            <div class="alert alert-primary" style="font-size: 14px; line-height: 15px">The sample is the amount of hashtags that you wish to randomly pick from the list when the bot will run</div>
-            <input type="number" name="sample" class="form-control" id="exampleFormControlInput1" value="{{.Sample}}">
+            <label for="exampleFormControlInput1"><strong>Total likes</strong></label>
+            <div class="alert alert-primary" style="font-size: 14px; line-height: 15px">The <strong>Total Likes</strong> specifies how many total likes you want to perform</div>
+            <input type="number" name="total_likes" class="form-control" id="exampleFormControlInput1" value="{{.TotalLikes}}">
           </div>
           <div class="form-row">
             <div class="form-group col">
-              <label for="exampleFormControlInput1"><strong>Min Follower</strong></label>
+              <label for="exampleFormControlInput1"><strong>Min Followers</strong></label>
               <input type="number" name="min_followers" class="form-control" id="exampleFormControlInput1" value="100">
             </div>
             <div class="form-group col">
-              <label for="exampleFormControlInput1"><strong>Max Follower</strong></label>
+              <label for="exampleFormControlInput1"><strong>Max Followers</strong></label>
               <input type="number" name="max_followers" class="form-control" id="exampleFormControlInput1" value="100">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Min Following</strong></label>
-              <input type="number" name="min_followers" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="min_following" class="form-control" id="exampleFormControlInput1" value="100">
             </div>
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Max Following</strong></label>
-              <input type="number" name="max_followers" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="max_following" class="form-control" id="exampleFormControlInput1" value="100">
             </div>
           </div>
           <div class="form-group">
@@ -93,9 +93,12 @@
           <button class="btn btn-primary" type="save" name="button">Save!</button>
         </form>
         <div class="container row" style="padding-top: 10px;">
+          Status:   <strong id="status">Unavailable</strong>
+        </div>
+        <div class="container row" style="padding-top: 10px;">
           <div class="col-xs-4">
-            <form class="form-group" action="run" method="post">
-              <button class="btn btn-primary" type="submit" name="button">Start!</button>
+            <form class="form-group" action="run" method="post" id="startForm">
+              <button class="btn btn-primary" type="submit" name="button" id="startButton">Start!</button>
             </form>
           </div>
           <div class="col-xs-2" style="width: 10px">
@@ -104,12 +107,11 @@
             </div>
           </div>
           <div class="col-xs-4">
-            <form class="form-group" action="stop" method="post">
+            <form class="form-group" action="stop" method="post" id="stopForm">
               <button class="btn btn-primary" type="submit" name="button">STOP!</button>
             </form>
           </div>
         </div>
-
 
       </div>
     </div>
@@ -117,6 +119,38 @@
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <script type="text/javascript">
+    var ws = new WebSocket("ws://localhost:8080/ws");
+
+    function changeStatus(running) {
+      var disabled = 'disabled';
+      var startButton = '#startButton'
+      if (running) {
+        console.log('Is running!');
+        $(startButton).attr(disabled, "true");
+      } else {
+        console.log('Is not running!');
+        $(startButton).removeAttr(disabled);
+      }
+    }
+
+    ws.onmessage = function (event) {
+      var d = JSON.parse(event.data);
+      console.log(d);
+      changeStatus(d.running)
+      $('#stopForm').attr('action', 'stop?conId=' + d.id)
+      $('#startForm').attr('action', 'run?conId=' + d.id)
+      $('#status').text(d.running ? 'Running' : 'Not running');
+    }
+    ws.onerror = function (event) {
+      console.log(event);
+      $('#status').text('Unavailable')
+    }
+    ws.onclose = function (event) {
+      console.log(event);
+      $('#status').text('Unavailable')
+    }
+  </script>
 </body>
 
 </html>

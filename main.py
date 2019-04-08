@@ -11,7 +11,6 @@ try:
         data = json.load(f)
         insta_username = data['username']
         insta_password = data['password']
-        clarifai_api_key = data['clarifai_api_key']
     pass
 except Exception as e:
     raise
@@ -32,29 +31,37 @@ try:
         data = json.load(f)
         comments = data['comments']
         hashtags = data['hashtags']
-        s = data['sample']
+        total_likes = data['total_likes']
+        max_follower = data['max_followers']
+        min_follower = data['min_followers']
+        max_following = data['max_following']
+        min_following = data['min_following']
+        potency = data['potency']
     pass
     session.login()
 
     # settings
-    selection = sample(hashtags, s) # Select sample random hashtags
+    # selection = sample(hashtags, s) # Select sample random hashtags
     # session.set_comments(comments)
     # session.set_do_comment(True, percentage=50)
     # session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
+    ratio = 1.0
+    if potency == 'positive':
+        ratio = max_follower / max_following
+    elif potency == 'negative':
+        ratio = -(max_following / max_follower)
+
     session.set_user_interact(amount=5, randomize=True, percentage=50, media='Photo')
     session.set_relationship_bounds(enabled=True,
-                                potency_ratio=-1.25,
-                                max_followers=8500,
-                                max_following=4490,
-                                min_followers=300,
-                                min_following=150,
-                                min_posts=10,
-                                max_posts=1000
+				                    potency_ratio=ratio,
+				                    delimit_by_numbers=True,
+	                                max_followers=max_follower,
+	                                min_followers=min_follower,
+                                    max_following=max_following,
+	                                min_following=min_following,
     )
-    session.like_by_tags(selection, amount=s, use_smart_hashtags=False)
-    # session.clarifai_check_img_for(['face'])
-    # session.set_use_clarifai(enabled=True, api_key=clarifai_api_key)
-    session.like_by_feed(amount=100, randomize=True, unfollow=False, interact=True)
+    session.like_by_tags(hashtags, use_smart_hashtags=False)
+    session.like_by_feed(amount=total_likes, randomize=True, unfollow=False, interact=True)
 
 except Exception as exc:
     # if changes to IG layout, upload the file to help us locate the change
