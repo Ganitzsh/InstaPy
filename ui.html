@@ -8,8 +8,8 @@
   <style media="screen">
     body {
         margin: 0 auto;
-        width: 60%;
-        padding: 16px;
+        padding-top: 16px;
+        padding-bottom: 16px;
       }
     </style>
 </head>
@@ -49,24 +49,28 @@
             <div class="alert alert-primary" style="font-size: 14px; line-height: 15px">The <strong>Total Likes</strong> specifies how many total likes you want to perform</div>
             <input type="number" name="total_likes" class="form-control" id="exampleFormControlInput1" value="{{.TotalLikes}}">
           </div>
+          <div class="form-group">
+            <label for="exampleFormControlInput1"><strong>Per user</strong></label>
+            <input type="number" name="per_user" class="form-control" id="exampleFormControlInput1" value="{{.PerUser}}">
+          </div>
           <div class="form-row">
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Min Followers</strong></label>
-              <input type="number" name="min_followers" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="min_followers" class="form-control" id="exampleFormControlInput1" value="{{.MinFollowers}}">
             </div>
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Max Followers</strong></label>
-              <input type="number" name="max_followers" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="max_followers" class="form-control" id="exampleFormControlInput1" value="{{.MaxFollowers}}">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Min Following</strong></label>
-              <input type="number" name="min_following" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="min_following" class="form-control" id="exampleFormControlInput1" value="{{.MinFollowing}}">
             </div>
             <div class="form-group col">
               <label for="exampleFormControlInput1"><strong>Max Following</strong></label>
-              <input type="number" name="max_following" class="form-control" id="exampleFormControlInput1" value="100">
+              <input type="number" name="max_following" class="form-control" id="exampleFormControlInput1" value="{{.MaxFollowing}}">
             </div>
           </div>
           <div class="form-group">
@@ -112,6 +116,8 @@
             </form>
           </div>
         </div>
+        <div class="container row" style="padding-top: 10px; max-height: 400px;" id="output">
+        </div>
 
       </div>
     </div>
@@ -120,7 +126,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
   <script type="text/javascript">
-    var ws = new WebSocket("ws://localhost:8080/ws");
+    console.log("ws://" + window.location.hostname + ":8080/ws");
+    var ws = new WebSocket("ws://" + window.location.hostname + ":8080/ws");
 
     function changeStatus(running) {
       var disabled = 'disabled';
@@ -141,6 +148,7 @@
       $('#stopForm').attr('action', 'stop?conId=' + d.id)
       $('#startForm').attr('action', 'run?conId=' + d.id)
       $('#status').text(d.running ? 'Running' : 'Not running');
+      $('#output').html(d.output);
     }
     ws.onerror = function (event) {
       console.log(event);

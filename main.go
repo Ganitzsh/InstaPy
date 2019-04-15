@@ -41,6 +41,7 @@ type res struct {
 	Comments     []string    `json:"comments" form:"comments"`
 	TotalLikes   int         `json:"total_likes" forn:"total_likes"`
 	Potency      PotencyMode `json:"potency" form:"potency"`
+	PerUser      int         `json:"per_user" form:"per_user"`
 	MaxFollowers int         `json:"max_followers"`
 	MinFollowers int         `json:"min_followers"`
 	MaxFollowing int         `json:"max_following"`
@@ -59,6 +60,7 @@ type saveReq struct {
 	Hashtags     string `json:"hashtags" form:"hashtags"`
 	Comments     string `json:"comments" form:"comments"`
 	TotalLikes   int    `json:"total_likes" form:"total_likes"`
+	PerUser      int    `json:"per_user" form:"per_user"`
 	Username     string `json:"username" form:"username"`
 	Password     string `json:"password" form:"password"`
 	Potency      string `json:"potency" form:"potency"`
@@ -70,7 +72,7 @@ type saveReq struct {
 
 var command *cmd.Cmd
 
-func runBot(r *res, conn *websocket.Conn) {
+func runBot(r *res, conn *websocket.Conn, clients map[string]*websocket.Conn) {
 	// Start a long-running process, capture stdout and stderr
 	if command != nil {
 		return
@@ -78,7 +80,7 @@ func runBot(r *res, conn *websocket.Conn) {
 	command = cmd.NewCmd("python3", "main.py")
 	statusChan := command.Start() // non-blocking
 
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 
 	// Print last line of stdout every 2s
 	go func() {
@@ -94,6 +96,17 @@ func runBot(r *res, conn *websocket.Conn) {
 				if lastString != str {
 					lastString = str
 					logrus.Info(lastString)
+					if clients != nil {
+						for id, c := range clients {
+							if c != nil {
+								c.WriteJSON(wsCmdRegister{
+									ID:      id,
+									Running: true,
+									Output:  strings.Join(status.Stderr, "<br/>"),
+								})
+							}
+						}
+					}
 				}
 			}
 		}
@@ -116,17 +129,26 @@ func runBot(r *res, conn *websocket.Conn) {
 		logrus.Info("Still running")
 	}
 
-	if conn != nil {
-		conn.WriteJSON(wsCmdRegister{
-			Running: command != nil,
-		})
+	if clients != nil {
+		for _, client := range clients {
+			if client != nil {
+				client.WriteJSON(wsCmdRegister{
+					Running: command != nil,
+				})
+			}
+		}
 	}
+
 	<-statusChan
 	command = nil
-	if conn != nil {
-		conn.WriteJSON(wsCmdRegister{
-			Running: command != nil,
-		})
+	if clients != nil {
+		for _, client := range clients {
+			if client != nil {
+				client.WriteJSON(wsCmdRegister{
+					Running: command != nil,
+				})
+			}
+		}
 	}
 }
 
@@ -138,6 +160,7 @@ var upgrader = websocket.Upgrader{
 type wsCmdRegister struct {
 	ID      string `json:"id"`
 	Running bool   `json:"running"`
+	Output  string `json:"output"`
 }
 
 const (
@@ -219,7 +242,7 @@ func main() {
 		})
 	})
 	r.POST("/run", func(c *gin.Context) {
-		go runBot(&resources, clients[c.Query("conId")])
+		go runBot(&resources, clients[c.Query("conId")], clients)
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
 	r.POST("/stop", func(c *gin.Context) {
@@ -228,11 +251,13 @@ func main() {
 			command = nil
 		}
 		conId := c.Query("conId")
-		if conn := clients[conId]; conn != nil {
-			conn.WriteJSON(wsCmdRegister{
-				ID:      conId,
-				Running: command != nil,
-			})
+		for _, client := range clients {
+			if client != nil {
+				client.WriteJSON(wsCmdRegister{
+					ID:      conId,
+					Running: command != nil,
+				})
+			}
 		}
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
@@ -246,6 +271,7 @@ func main() {
 			Hashtags:     strings.Split(strings.Trim(req.Hashtags, "\r\n"), "\r\n"),
 			Comments:     strings.Split(strings.Trim(req.Comments, "\r\n"), "\r\n"),
 			TotalLikes:   req.TotalLikes,
+			PerUser:      req.PerUser,
 			Potency:      PotencyMode(req.Potency),
 			MaxFollowers: req.MaxFollowers,
 			MinFollowers: req.MinFollowers,

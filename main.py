@@ -37,6 +37,7 @@ try:
         max_following = data['max_following']
         min_following = data['min_following']
         potency = data['potency']
+        per_user = data['per_user']
     pass
     session.login()
 
@@ -45,13 +46,13 @@ try:
     # session.set_comments(comments)
     # session.set_do_comment(True, percentage=50)
     # session.set_smart_hashtags(selection, limit=3, sort='top', log_tags=True)
-    ratio = 1.0
-    if potency == 'positive':
-        ratio = max_follower / max_following
-    elif potency == 'negative':
-        ratio = -(max_following / max_follower)
+    ratio = -1.0
+    # if potency == 'positive':
+    #     ratio = max_follower / max_following
+    # elif potency == 'negative':
+    #     ratio = -(max_following / max_follower)
 
-    session.set_user_interact(amount=5, randomize=True, percentage=50, media='Photo')
+    session.set_user_interact(amount=per_user, randomize=True, percentage=50, media='Photo')
     session.set_relationship_bounds(enabled=True,
 				                    potency_ratio=ratio,
 				                    delimit_by_numbers=True,
@@ -60,7 +61,7 @@ try:
                                     max_following=max_following,
 	                                min_following=min_following,
     )
-    session.like_by_tags(hashtags, use_smart_hashtags=False)
+    session.like_by_tags(hashtags, use_smart_hashtags=False, randomize=True)
     session.like_by_feed(amount=total_likes, randomize=True, unfollow=False, interact=True)
 
 except Exception as exc:

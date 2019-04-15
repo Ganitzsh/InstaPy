@@ -1,23 +1,19 @@
 {
     "hashtags": [
-        "europeancities",
-        "exploringeurope",
-        "europeanarchitecture",
-        "flowersphotography",
-        "modernarchitecture",
-        "urbanarchitecture",
-        "facadelovers",
-        "beautifulbuildings",
-        "classicarchitecture",
-        "interiordetails"
+        "citylandscape ",
+        "pragueworld",
+        "visitprague ",
+        "visiteurope ",
+        "livingeurope "
     ],
     "comments": [
         ""
     ],
-    "total_likes": 100,
+    "total_likes": 40,
     "potency": "negative",
-    "max_followers": 100,
-    "min_followers": 100,
-    "max_following": 100,
-    "min_following": 100
+    "per_user": 4,
+    "max_followers": 600,
+    "min_followers": 90,
+    "max_following": 1500,
+    "min_following": 110
 }
