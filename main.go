@@ -39,7 +39,7 @@ const (
 type res struct {
 	Hashtags     []string    `json:"hashtags" form:"hashtags"`
 	Comments     []string    `json:"comments" form:"comments"`
-	TotalLikes   int         `json:"total_likes" forn:"total_likes"`
+	TotalLikes   int         `json:"total_likes" form:"total_likes"`
 	Potency      PotencyMode `json:"potency" form:"potency"`
 	PerUser      int         `json:"per_user" form:"per_user"`
 	MaxFollowers int         `json:"max_followers"`
@@ -83,14 +83,14 @@ func runBot(r *res, conn *websocket.Conn, clients map[string]*websocket.Conn) {
 	ticker := time.NewTicker(1 * time.Second)
 
 	// Print last line of stdout every 2s
-	go func() {
+	go func(com *cmd.Cmd) {
 		var lastString string
 		for range ticker.C {
-			if command == nil {
+			if com == nil {
 				logrus.Info("I'm out")
 				return
 			}
-			status := command.Status()
+			status := com.Status()
 			if len(status.Stderr) > 0 {
 				str := status.Stderr[len(status.Stderr)-1]
 				if lastString != str {
@@ -110,14 +110,14 @@ func runBot(r *res, conn *websocket.Conn, clients map[string]*websocket.Conn) {
 				}
 			}
 		}
-	}()
+	}(command)
 
 	// Stop command after 1 hour
-	go func() {
+	go func(com *cmd.Cmd) {
 		<-time.After(1 * time.Hour)
 		command.Stop()
 		command = nil
-	}()
+	}(command)
 
 	// Check if command is done
 	select {
@@ -211,10 +211,10 @@ func main() {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
-		conId := uuid.New().String()
-		clients[conId] = conn
+		conID := uuid.New().String()
+		clients[conID] = conn
 		conn.WriteJSON(wsCmdRegister{
-			ID:      conId,
+			ID:      conID,
 			Running: command != nil,
 		})
 		go func() {
@@ -242,7 +242,7 @@ func main() {
 		})
 	})
 	r.POST("/run", func(c *gin.Context) {
-		go runBot(&resources, clients[c.Query("conId")], clients)
+		go runBot(&resources, clients[c.Query("conID")], clients)
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
 	r.POST("/stop", func(c *gin.Context) {
@@ -250,11 +250,11 @@ func main() {
 			command.Stop()
 			command = nil
 		}
-		conId := c.Query("conId")
+		conID := c.Query("conID")
 		for _, client := range clients {
 			if client != nil {
 				client.WriteJSON(wsCmdRegister{
-					ID:      conId,
+					ID:      conID,
 					Running: command != nil,
 				})
 			}
