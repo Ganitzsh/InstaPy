@@ -11,6 +11,7 @@ try:
         data = json.load(f)
         insta_username = data['username']
         insta_password = data['password']
+        headless = data['headless']
     pass
 except Exception as e:
     raise
@@ -23,7 +24,7 @@ except Exception as e:
 
 session = InstaPy(username=insta_username,
                   password=insta_password,
-                  headless_browser=False,
+                  headless_browser=headless,
                   multi_logs=True)
 
 try:
