@@ -20,11 +20,11 @@ import (
 )
 
 type tmplcontent struct {
-	creds
+	config
 	res
 }
 
-type creds struct {
+type config struct {
 	Username string `json:"username" form:"username"`
 	Password string `json:"password" form:"password"`
 }
@@ -185,13 +185,14 @@ var (
 func main() {
 	r := gin.Default()
 
+	logrus.Info("Starting gobot....")
 	clients := map[string]*websocket.Conn{}
 	b, err := ioutil.ReadFile("./config.json")
 	if err != nil {
 		logrus.Fatalf("Could not read resources.json: %v", err)
 	}
-	credentials := creds{}
-	if e := json.Unmarshal(b, &credentials); e != nil {
+	config := config{}
+	if e := json.Unmarshal(b, &config); e != nil {
 		logrus.Fatalf("Could not unmarshal resources: %v", e)
 	}
 
@@ -237,8 +238,8 @@ func main() {
 	})
 	r.GET("/ui", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "ui.html", tmplcontent{
-			creds: credentials,
-			res:   resources,
+			config: config,
+			res:    resources,
 		})
 	})
 	r.POST("/run", func(c *gin.Context) {
@@ -282,9 +283,9 @@ func main() {
 		ioutil.WriteFile("./resources.json", b, 0655)
 		resources = newRes
 
-		credentials.Password = req.Password
-		credentials.Username = req.Username
-		b, _ = json.MarshalIndent(credentials, "", "    ")
+		config.Password = req.Password
+		config.Username = req.Username
+		b, _ = json.MarshalIndent(config, "", "    ")
 		ioutil.WriteFile("./config.json", b, 0655)
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
