@@ -117,8 +117,8 @@ func runBot(r *res, conn *websocket.Conn, clients map[string]*websocket.Conn) {
 	// Stop command after 1 hour
 	go func(com *cmd.Cmd) {
 		<-time.After(1 * time.Hour)
-		command.Stop()
-		command = nil
+		com.Stop()
+		com = nil
 	}(command)
 
 	// Check if command is done
