@@ -27,6 +27,7 @@ type tmplcontent struct {
 type config struct {
 	Username string `json:"username" form:"username"`
 	Password string `json:"password" form:"password"`
+	Headless bool   `json:"headless" form:"headless"`
 }
 
 type PotencyMode string
@@ -63,6 +64,7 @@ type saveReq struct {
 	PerUser      int    `json:"per_user" form:"per_user"`
 	Username     string `json:"username" form:"username"`
 	Password     string `json:"password" form:"password"`
+	Headless     bool   `json:"headless" form:"headless"`
 	Potency      string `json:"potency" form:"potency"`
 	MaxFollowers int    `json:"max_followers" form:"max_followers"`
 	MinFollowers int    `json:"min_followers" form:"min_followers"`
@@ -263,7 +265,9 @@ func main() {
 		c.Redirect(http.StatusMovedPermanently, "/ui")
 	})
 	r.POST("/save", func(c *gin.Context) {
-		req := saveReq{}
+		req := saveReq{
+			Headless: true,
+		}
 		if err := c.Bind(&req); err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
@@ -285,6 +289,8 @@ func main() {
 
 		config.Password = req.Password
 		config.Username = req.Username
+		config.Headless = req.Headless
+
 		b, _ = json.MarshalIndent(config, "", "    ")
 		ioutil.WriteFile("./config.json", b, 0655)
 		c.Redirect(http.StatusMovedPermanently, "/ui")
