@@ -53,5 +53,6 @@ func (b *bot) run(settings *runSettings) (*runTicket, error) {
 		b.m.Unlock()
 	}()
 
+	b.m.Unlock()
 	return ticket, nil
 }
