@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/go-cmd/cmd"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,7 +41,7 @@ func (b *bot) run(settings *runSettings) (*runTicket, error) {
 	statusChan := b.cmd.Start()
 
 	ticket := &runTicket{
-		id:       "123",
+		id:       uuid.New().String(),
 		botID:    b.id,
 		settings: settings,
 	}

@@ -1,6 +1,14 @@
 package main
 
-var clients = make(map[string]*client)
-var tickets = make(map[string]*runTicket)
-var bots = make(map[string]*bot)
-var users = make(map[string]*user)
+import "go.mongodb.org/mongo-driver/mongo"
+
+var (
+	clients = make(map[string]*client)
+	tickets = make(map[string]*runTicket)
+	bots    = make(map[string]*bot)
+	users   = make(map[string]*user)
+
+	tokens        = make(map[string][]*token)
+	mongoDBClient *mongo.Client
+	uRepo         *userRepository
+)
