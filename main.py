@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import sys
 from random import sample
 from instapy import InstaPy
 from pprint import pprint
@@ -7,11 +8,13 @@ from pprint import pprint
 from selenium.common.exceptions import NoSuchElementException
 
 try:
-    with open('config.json') as f:
+    with open(sys.argv[1]) as f:
         data = json.load(f)
-        insta_username = data['username']
-        insta_password = data['password']
-        headless = data['headless']
+        print(data);
+        insta_username = data['Account']['Username']
+        insta_password = data['Account']['Password']
+        #  headless = data['headless']
+        headless = True
     pass
 except Exception as e:
     raise
@@ -28,17 +31,18 @@ session = InstaPy(username=insta_username,
                   multi_logs=True)
 
 try:
-    with open('resources.json', encoding='utf-8') as f:
-        data = json.load(f)
-        comments = data['comments']
-        hashtags = data['hashtags']
-        total_likes = data['total_likes']
-        max_follower = data['max_followers']
-        min_follower = data['min_followers']
-        max_following = data['max_following']
-        min_following = data['min_following']
-        potency = data['potency']
-        per_user = data['per_user']
+    with open(sys.argv[1], encoding='utf-8') as f:
+        root = json.load(f)
+        data = root['Settings']
+        comments = data['Comments']
+        hashtags = data['Hashtags']
+        total_likes = data['TotalLikes']
+        max_follower = data['MaxFollowers']
+        min_follower = data['MinFollowers']
+        max_following = data['MaxFollowing']
+        min_following = data['MinFollowing']
+        potency = data['Potency']
+        per_user = data['PerUser']
     pass
     session.login()
 
@@ -54,13 +58,14 @@ try:
     #     ratio = -(max_following / max_follower)
 
     session.set_user_interact(amount=per_user, randomize=True, percentage=50, media='Photo')
-    session.set_relationship_bounds(enabled=True,
-				                    potency_ratio=ratio,
-				                    delimit_by_numbers=True,
-	                                max_followers=max_follower,
-	                                min_followers=min_follower,
-                                    max_following=max_following,
-	                                min_following=min_following,
+    session.set_relationship_bounds(
+            enabled=True,
+            potency_ratio=ratio,
+            delimit_by_numbers=True,
+            max_followers=max_follower,
+            min_followers=min_follower,
+            max_following=max_following,
+            min_following=min_following,
     )
     session.like_by_tags(hashtags, use_smart_hashtags=False, randomize=True)
     session.like_by_feed(amount=total_likes, randomize=True, unfollow=False, interact=True)

@@ -8,13 +8,13 @@ const (
 )
 
 type botSettings struct {
-	hashtags     []string
-	comments     []string
-	totalLikes   int
-	potency      potencyMode
-	perUser      int
-	maxFollowers int
-	minFollowers int
-	maxFollowing int
-	minFollowing int
+	Hashtags     []string
+	Comments     []string
+	TotalLikes   int
+	Potency      potencyMode
+	PerUser      int
+	MaxFollowers int
+	MinFollowers int
+	MaxFollowing int
+	MinFollowing int
 }

@@ -7,40 +7,37 @@ import (
 )
 
 type token struct {
-	userID       string
-	accessToken  string
-	refreshToken string
+	UserID       string
+	AccessToken  string
+	RefreshToken string
 }
 
 func newToken() *token {
 	return &token{}
 }
 
-func authenticateUser(username, password string) (*token, error) {
+func authenticateUser(username, password string) (*token, *user, error) {
 	user, err := uRepo.findUserByUsername(username)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if user.password != password {
-		return nil, errors.New("Invalid username or password")
+	if user.Password != password {
+		return nil, nil, errors.New("Invalid username or password")
 	}
 
 	t := newToken()
-	t.userID = user.id
-	t.accessToken = uuid.New().String()
-	t.refreshToken = uuid.New().String()
+	t.UserID = user.ID
+	t.AccessToken = uuid.New().String()
+	t.RefreshToken = uuid.New().String()
 
-	return t, nil
+	return t, user, nil
 }
 
 func verifyToken(tok *token) error {
-	for _, ts := range tokens {
-		for _, t := range ts {
-			if t.accessToken == tok.accessToken {
-				return nil
-			}
-		}
+	if users[tok.AccessToken] == nil {
+		return errors.New("Token not found")
 	}
-	return errors.New("Token not found")
+
+	return nil
 }

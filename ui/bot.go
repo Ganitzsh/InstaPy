@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/go-cmd/cmd"
@@ -10,14 +14,17 @@ import (
 )
 
 type runTicket struct {
-	id       string
-	botID    string
-	settings *runSettings
+	ID       string
+	Settings *runSettings
+	Username string
+	Label    string
+	Done     bool
+	Err      error
 }
 
 type runSettings struct {
-	account  *instagramAccount
-	settings *botSettings
+	Account  *instagramAccount
+	Settings *botSettings
 }
 
 type bot struct {
@@ -30,29 +37,54 @@ func newBot() *bot {
 	return &bot{}
 }
 
-func (b *bot) run(settings *runSettings) (*runTicket, error) {
+func (b *bot) run(label, username string, settings *runSettings) (*runTicket, error) {
 	b.m.Lock()
 	if b.cmd != nil {
 		b.m.Unlock()
 		return nil, errors.New("Already running")
 	}
 
-	b.cmd = cmd.NewCmd("python3", "../main.py")
-	statusChan := b.cmd.Start()
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "*")
+	defer tmpFile.Close()
 
-	ticket := &runTicket{
-		id:       uuid.New().String(),
-		botID:    b.id,
-		settings: settings,
+	if err != nil {
+		return nil, err
 	}
 
-	go func() {
-		<-statusChan
-		logrus.WithField("id", b.id).Infof("[BOT] Finished with ticket %s", ticket.id)
+	jsonSettings, _ := json.Marshal(settings)
+	tmpFile.Write(jsonSettings)
+
+	b.cmd = cmd.NewCmd("python3", "../main.py", tmpFile.Name())
+
+	ticket := &runTicket{
+		ID:       uuid.New().String(),
+		Done:     false,
+		Label:    label,
+		Username: username,
+		Settings: settings,
+	}
+
+	go func(t runTicket, statusChan <-chan cmd.Status) {
+		for {
+			s := <-statusChan
+
+			if s.Error != nil {
+				logrus.Errorf("Execution error: %v", s.Error)
+			}
+
+			if s.Exit == 1 {
+				logrus.Errorf("There was an error:\n%v", strings.Join(s.Stderr, "\n"))
+			}
+
+			if s.Complete {
+				break
+			}
+		}
+		logrus.Infof("[BOT] Finished with ticket %s", t.ID)
 		b.m.Lock()
 		b.cmd = nil
 		b.m.Unlock()
-	}()
+	}(*ticket, b.cmd.Start())
 
 	b.m.Unlock()
 	return ticket, nil

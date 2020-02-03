@@ -5,8 +5,20 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
+
+func getUser(c *gin.Context) *user {
+	u, exists := c.Get("user")
+
+	if !exists {
+		return nil
+	}
+
+	return u.(*user)
+}
 
 func jsonError(c *gin.Context, status int, err error) {
 	c.JSON(status, map[string]string{
@@ -14,23 +26,41 @@ func jsonError(c *gin.Context, status int, err error) {
 	})
 }
 
-func validateToken(c *gin.Context) {
+func validateTokenMiddleware(c *gin.Context) {
 	bearer := strings.Split(c.GetHeader("Authorization"), " ")
 	if len(bearer) < 2 {
 		jsonError(c, http.StatusUnauthorized, errors.New("Invalid Token"))
+		c.Abort()
 		return
 	}
 	bearerToken := bearer[1]
-	if err := verifyToken(&token{accessToken: bearerToken}); err != nil {
+	if err := verifyToken(&token{AccessToken: bearerToken}); err != nil {
 		jsonError(c, http.StatusUnauthorized, errors.New("Invalid Token"))
+		c.Abort()
 		return
 	}
+
+	globMut.Lock()
+
+	user := users[bearerToken]
+	userExists := user != nil
+
+	globMut.Unlock()
+
+	if !userExists {
+		jsonError(c, http.StatusUnauthorized, errors.New("Invalid Token"))
+		c.Abort()
+		return
+	}
+
+	c.Set("user", user)
+
 	c.Next()
 }
 
 type authenticatePayload struct {
-	username string
-	password string
+	Username string
+	Password string
 }
 
 func authenticate(c *gin.Context) {
@@ -41,11 +71,143 @@ func authenticate(c *gin.Context) {
 		return
 	}
 
-	t, err := authenticateUser(req.username, req.password)
+	t, u, err := authenticateUser(req.Username, req.Password)
 	if err != nil {
 		jsonError(c, http.StatusUnauthorized, err)
 		return
 	}
 
+	globMut.Lock()
+
+	users[t.AccessToken] = u
+
+	globMut.Unlock()
+
 	c.JSON(http.StatusOK, t)
+}
+
+type saveSettingsPayload struct {
+	Settings *botSettings
+}
+
+func saveSettings(c *gin.Context) {
+	req := saveSettingsPayload{}
+
+	userValue, _ := c.Get("user")
+
+	user := userValue.(*user)
+
+	if err := c.BindJSON(&req); err != nil {
+		jsonError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	user.Settings = req.Settings
+
+	globMut.Lock()
+
+	uRepo.save(user)
+
+	globMut.Unlock()
+
+	c.JSON(http.StatusOK, user)
+}
+
+func getTicketStatus(c *gin.Context) {
+	ticketID := c.Param("ticketID")
+
+	if ticketID == "" {
+		jsonError(c, http.StatusBadRequest, errors.New("Empty ticket id"))
+		return
+	}
+
+	globMut.Lock()
+
+	ticket := tickets[ticketID]
+
+	if ticket == nil {
+		globMut.Unlock()
+		jsonError(c, http.StatusBadRequest, errors.New("Ticket not found"))
+		return
+	}
+
+	done := ticket.Done
+	err := ticket.Err
+
+	globMut.Unlock()
+
+	var errMessage string
+
+	if err != nil {
+		errMessage = err.Error()
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"running": !done,
+		"error":   errMessage,
+	})
+}
+
+type runJobRequest struct {
+	Label    string
+	Settings *runSettings
+}
+
+type runJobResponse struct {
+	id string
+}
+
+func runJob(c *gin.Context) {
+	req := runJobRequest{}
+
+	user := getUser(c)
+
+	if err := c.BindJSON(&req); err != nil {
+		jsonError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	globMut.Lock()
+
+	spew.Dump(req)
+	ticket, err := globBot.run(req.Label, user.Username, req.Settings)
+	spew.Dump(ticket, err)
+
+	if err != nil {
+		globMut.Unlock()
+		logrus.Errorf("Error running the job: %v", err)
+		jsonError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	tickets[ticket.ID] = ticket
+
+	globMut.Unlock()
+
+	c.JSON(http.StatusOK, ticket)
+}
+
+func myTickets(c *gin.Context) {
+	user := getUser(c)
+
+	ret := []runTicket{}
+
+	globMut.Lock()
+
+	for _, ticket := range tickets {
+		if ticket.Username == user.Username {
+			ret = append(ret, *ticket)
+		}
+	}
+
+	globMut.Unlock()
+
+	spew.Dump(ret)
+
+	c.JSON(http.StatusOK, ret)
+}
+
+func me(c *gin.Context) {
+	user := getUser(c)
+	c.JSON(http.StatusOK, user)
 }

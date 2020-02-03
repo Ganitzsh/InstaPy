@@ -9,10 +9,20 @@ import (
 )
 
 type instagramAccount struct {
-	id       string
-	label    string
-	username string
-	password string
+	ID       string
+	Label    string
+	Username string
+	Password string
+}
+
+func (igacc *instagramAccount) setUsername(value string) *instagramAccount {
+	igacc.Username = value
+	return igacc
+}
+
+func (igacc *instagramAccount) setLabel(value string) *instagramAccount {
+	igacc.Label = value
+	return igacc
 }
 
 func newInstagramAccount() *instagramAccount {
@@ -20,11 +30,11 @@ func newInstagramAccount() *instagramAccount {
 }
 
 type user struct {
-	id                string
-	username          string
-	password          string
-	instagramAccounts []*instagramAccount
-	settings          *botSettings
+	ID                string
+	Username          string
+	Password          string
+	InstagramAccounts []*instagramAccount
+	Settings          *botSettings
 }
 
 func newUser() *user {
@@ -40,19 +50,22 @@ func newUserRepository(col *mongo.Collection) *userRepository {
 }
 
 func (r *userRepository) save(u *user) (*user, error) {
-	if u.id == "" {
-		u.id = uuid.New().String()
+	if u.ID == "" {
+		u.ID = uuid.New().String()
 	}
-	if u.instagramAccounts != nil {
-		for _, account := range u.instagramAccounts {
-			if account.id == "" {
-				account.id = uuid.New().String()
+
+	if u.InstagramAccounts != nil {
+		for _, account := range u.InstagramAccounts {
+			if account.ID == "" {
+				account.ID = uuid.New().String()
 			}
 		}
 	}
+
 	if _, err := r.InsertOne(context.Background(), u); err != nil {
 		return nil, err
 	}
+
 	return u, nil
 }
 
