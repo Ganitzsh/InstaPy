@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,7 +55,14 @@ func (a *api) Start() error {
 		})
 	}
 	router := gin.Default()
-
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		ExposeHeaders:    []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	router.POST("/auth", authenticate)
 
 	auth := router.Group("/api", validateTokenMiddleware)
