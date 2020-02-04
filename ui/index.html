@@ -34,13 +34,13 @@
 
         <div class="list">
 
-          <div v-if="!sharedState.instagramAccounts.length">
+          <div v-if="!accounts.length">
             No Instagram accounts found 
           </div>
 
-          <div class="card-small" v-if="sharedState.instagramAccounts.length" v-for="account in sharedState.instagramAccounts">
-            <h4>{{ account.label }}</h4>
-            <p>{{ account.username }}</p>
+          <div class="card-small" v-if="accounts.length" v-for="account in accounts">
+            <strong>{{ account.Label }}</strong>
+            <p>{{ account.Username }}</p>
           </div>
 
         </div>
@@ -70,16 +70,19 @@
 
       <div id="settings">
         <form accept-charset="utf-8" v-on:submit.prevent="onSubmit">
+          <v-tags-input element-id="tags" 
+                v-model="Hashtags"></v-tags-input>
         </form>
       </div>
 
     </div>
-    <script src="https://unpkg.com/rxjs/bundles/rxjs.umd.js"></script>
-    <script src="https://unpkg.com/vue/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.13/vue.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@voerro/vue-tagsinput@2.0.2/dist/voerro-vue-tagsinput.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js" charset="utf-8"></script>
 
     <script charset="utf-8">
+      Vue.config.devtools = true;
       var store = {
         state : {
           accessToken: '',
@@ -89,9 +92,10 @@
           currentUser: null
         },
 
-        setInstgramAccounts: (value) => this.state.instagramAccounts = value,
-        setJobs: (value) => this.state.jobs = value,
-        setSettings: (value) => this.state.settings = value
+        setInstgramAccounts (value) { this.state.instagramAccounts = value },
+        setJobs (value) { this.state.jobs = value },
+        setSettings (value) { this.state.settings = value },
+        setCurrentUser (value) { this.state.currentUser = value }
       }
 
       var loginContainer = new Vue({
@@ -104,38 +108,35 @@
           }
         },
         methods: {
-          authenticate: () => axios
-            .post('http://localhost:8080/auth', {
-              username: loginContainer.privateState.username,
-              password: loginContainer.privateState.password
-            })
-            .then((response) => {
-              console.log(response);
-              loginContainer.privateState.error = null;
-              window.localStorage.setItem('accessToken', response.data.AccessToken);
-              store.state.accessToken = response.data.AccessToken;
-              axios.get({
-                method: 'GET',  
-                url: 'http://localhost:8080/me',
-                headers: {
-                  Authorization: `Bearer ${store.state.accessToken}`
-                }
-              })
-              .then((me) => console.log(me))
-            })
-            .catch((error) => {
-              loginContainer.privateState.error = {
-                message: error.response.data.error,
-                status: error.response.status
-              };
-            })
+          authenticate: async () => {
+            var tokenResponse = await axios.post('http://localhost:8080/auth', {
+                username: loginContainer.privateState.username,
+                password: loginContainer.privateState.password
+            });
+
+            var meResponse = await axios.get('http://localhost:8080/api/me', {
+              headers: {
+                Authorization: `Bearer ${tokenResponse.data.AccessToken}`
+              }
+            });
+            
+            var me = meResponse.data;
+
+            store.setCurrentUser(me);
+            console.log(me);
+            instagramAccounts.accounts.push(...me.InstagramAccounts);
+          }
         }
       });
 
       var instagramAccounts = new Vue({
         el: '#instagram-accounts',
         data: {
-          sharedState: store.state
+          accounts: []
+        },
+        updated: (value) => {
+          console.log('update');
+          console.log('accounts: ', this.accounts);
         }
       });
 
@@ -147,6 +148,14 @@
             refreshing: false
           }
         },
+      })
+      
+      var settings = new Vue({
+        el: '#settings',
+        data: {
+          Hashtags: []
+        },
+        components: { "v-tags-input": VoerroTagsInput },
       })
 
     </script>
