@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -44,6 +43,16 @@ func validateTokenMiddleware(c *gin.Context) {
 
 	user := users[bearerToken]
 	userExists := user != nil
+
+	if userExists {
+		latestUser, err := uRepo.findUserByUsername(user.Username)
+		if err != nil {
+			jsonError(c, http.StatusInternalServerError, err)
+			c.Abort()
+			return
+		}
+		user = latestUser
+	}
 
 	globMut.Unlock()
 
@@ -169,9 +178,7 @@ func runJob(c *gin.Context) {
 
 	globMut.Lock()
 
-	spew.Dump(req)
 	ticket, err := globBot.run(req.Label, user.Username, req.Settings)
-	spew.Dump(ticket, err)
 
 	if err != nil {
 		globMut.Unlock()
@@ -202,12 +209,14 @@ func myTickets(c *gin.Context) {
 
 	globMut.Unlock()
 
-	spew.Dump(ret)
-
 	c.JSON(http.StatusOK, ret)
 }
 
 func me(c *gin.Context) {
 	user := getUser(c)
 	c.JSON(http.StatusOK, user)
+}
+
+func noRoute(c *gin.Context) {
+	jsonError(c, http.StatusNotFound, errors.New("Route not found"))
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type instagramAccount struct {
@@ -62,9 +63,8 @@ func (r *userRepository) save(u *user) (*user, error) {
 		}
 	}
 
-	if _, err := r.InsertOne(context.Background(), u); err != nil {
-		return nil, err
-	}
+	opts := options.FindOneAndReplace().SetUpsert(true)
+	r.FindOneAndReplace(context.Background(), bson.M{"_id": u.ID}, u, opts)
 
 	return u, nil
 }

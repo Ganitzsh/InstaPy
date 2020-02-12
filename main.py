@@ -14,7 +14,7 @@ try:
         insta_username = data['Account']['Username']
         insta_password = data['Account']['Password']
         #  headless = data['headless']
-        headless = True
+        headless = False
     pass
 except Exception as e:
     raise

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-cmd/cmd"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -47,6 +48,7 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "*")
 	defer tmpFile.Close()
 
+	logrus.Println(tmpFile.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -65,10 +67,12 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 	}
 
 	go func(t runTicket, statusChan <-chan cmd.Status) {
+		var err error
 		for {
 			s := <-statusChan
 
 			if s.Error != nil {
+				err = s.Error
 				logrus.Errorf("Execution error: %v", s.Error)
 			}
 
@@ -77,12 +81,20 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 			}
 
 			if s.Complete {
+				spew.Dump(s.Stdout)
+				spew.Dump(s)
 				break
 			}
 		}
 		logrus.Infof("[BOT] Finished with ticket %s", t.ID)
 		b.m.Lock()
+		globMut.Lock()
 		b.cmd = nil
+		if tickets[t.ID] != nil {
+			tickets[t.ID].Done = true
+			tickets[t.ID].Err = err
+		}
+		globMut.Unlock()
 		b.m.Unlock()
 	}(*ticket, b.cmd.Start())
 

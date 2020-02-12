@@ -63,6 +63,9 @@ func (a *api) Start() error {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	router.StaticFile("/index", "./index.html")
+	router.NoRoute(noRoute)
+
 	router.POST("/auth", authenticate)
 
 	auth := router.Group("/api", validateTokenMiddleware)
@@ -70,6 +73,7 @@ func (a *api) Start() error {
 	auth.GET("/tickets", myTickets)
 	auth.GET("/me", me)
 	auth.POST("/jobs", runJob)
+	auth.POST("/settings", saveSettings)
 
 	return http.ListenAndServe(":8080", router)
 }
