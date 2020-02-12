@@ -47,6 +47,7 @@ func (a *api) Start() error {
 				TotalLikes:   10,
 				Potency:      potencyModePositive,
 				PerUser:      2,
+				MinPosts:     10,
 				MinFollowers: 500,
 				MaxFollowers: 1000,
 				MinFollowing: 50,

@@ -13,6 +13,7 @@ type botSettings struct {
 	TotalLikes   int
 	Potency      potencyMode
 	PerUser      int
+	MinPosts     int
 	MaxFollowers int
 	MinFollowers int
 	MaxFollowing int

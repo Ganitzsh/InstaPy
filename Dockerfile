@@ -1,11 +1,8 @@
-FROM golang:1.13 as build
+FROM golang:latest as builder
 
-WORKDIR /app
-
-COPY . .
-
-RUN go mod download
-RUN go build -tags netgo -a -v -o /bin/gobot
+ADD ./ui /go/src/instabot
+WORKDIR /go/src/instabot
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o app .
 
 FROM python:3.7-slim-buster
 WORKDIR /code
@@ -29,15 +26,16 @@ RUN sed -i "s#deb http://deb.debian.org/debian buster main#deb http://deb.debian
     # Fix Login A/B test detected error - https://github.com/timgrossmann/InstaPy/issues/4887#issuecomment-522290752
     && sed -i "159s#a\[text#button\[text#g" /usr/local/lib/python3.7/site-packages/instapy/xpath_compile.py
 
-WORKDIR /app
+WORKDIR /app/bot
 
 RUN pip3 install instapy
 
-COPY --from=build /bin/gobot /bin/gobot
-COPY --from=build /app .
+COPY --from=builder /go/src/instabot/app /bin/gobot
+COPY --from=builder /go/src/instabot/index.html .
+ADD ./main.py /app
 
 RUN chmod +x /bin/gobot
-RUN echo "{\"username\":\"user\",\"password\":\"password\",\"headless\":true}" > config.json
+RUN ls
 
 EXPOSE 8080
 

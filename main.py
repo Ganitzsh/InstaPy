@@ -14,7 +14,7 @@ try:
         insta_username = data['Account']['Username']
         insta_password = data['Account']['Password']
         #  headless = data['headless']
-        headless = False
+        headless = True
     pass
 except Exception as e:
     raise
@@ -40,6 +40,7 @@ try:
         comments = data['Comments']
         hashtags = data['Hashtags']
         total_likes = data['TotalLikes']
+        min_posts = data['MinPosts']
         max_follower = data['MaxFollowers']
         min_follower = data['MinFollowers']
         max_following = data['MaxFollowing']
@@ -73,18 +74,17 @@ try:
             no_profile_pic_percentage=100
     )
 
-    session.set_user_interact(
-            amount=per_user,
-            randomize=True,
-            percentage=100,
-            media='Photo'
-    )
+    #  session.set_user_interact(
+    #          amount=per_user,
+    #          randomize=True,
+    #          percentage=100,
+    #          media='Photo'
+    #  )
 
     session.set_relationship_bounds(
             enabled=True,
             delimit_by_numbers=True,
             min_posts=min_posts,
-            max_posts=max_posts,
             max_followers=max_follower,
             min_followers=min_follower,
             max_following=max_following,
