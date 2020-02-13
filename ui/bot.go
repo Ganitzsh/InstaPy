@@ -7,20 +7,29 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-cmd/cmd"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
+func now() *time.Time {
+	now := time.Now()
+	return &now
+}
+
 type runTicket struct {
-	ID       string
-	Settings *runSettings
-	Username string
-	Label    string
-	Done     bool
-	Err      error
+	ID        string
+	StartDate *time.Time
+	EndDate   *time.Time
+	Settings  *runSettings
+	Username  string
+	Label     string
+	Done      bool
+	Logs      []string
+	ErrLogs   []string
+	Err       error
 }
 
 type runSettings struct {
@@ -59,15 +68,43 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 	b.cmd = cmd.NewCmd("python3", "../main.py", tmpFile.Name())
 
 	ticket := &runTicket{
-		ID:       uuid.New().String(),
-		Done:     false,
-		Label:    label,
-		Username: username,
-		Settings: settings,
+		ID:        uuid.New().String(),
+		StartDate: now(),
+		Done:      false,
+		Label:     label,
+		Username:  username,
+		Settings:  settings,
 	}
+
+	go func(t runTicket, botCmd *cmd.Cmd) {
+		for {
+			if botCmd == nil {
+				break
+			}
+
+			s := botCmd.Status()
+
+			globMut.Lock()
+
+			if tickets[t.ID] != nil {
+				tickets[t.ID].Logs = s.Stdout
+				tickets[t.ID].ErrLogs = s.Stderr
+			}
+
+			globMut.Unlock()
+
+			if s.Complete {
+				break
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	}(*ticket, b.cmd)
 
 	go func(t runTicket, statusChan <-chan cmd.Status) {
 		var err error
+		var logs, errLogs []string
+
 		for {
 			s := <-statusChan
 
@@ -81,8 +118,8 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 			}
 
 			if s.Complete {
-				spew.Dump(s.Stdout)
-				spew.Dump(s)
+				logs = s.Stdout
+				errLogs = s.Stderr
 				break
 			}
 		}
@@ -93,6 +130,9 @@ func (b *bot) run(label, username string, settings *runSettings) (*runTicket, er
 		if tickets[t.ID] != nil {
 			tickets[t.ID].Done = true
 			tickets[t.ID].Err = err
+			tickets[t.ID].EndDate = now()
+			tickets[t.ID].Logs = logs
+			tickets[t.ID].ErrLogs = errLogs
 		}
 		globMut.Unlock()
 		b.m.Unlock()

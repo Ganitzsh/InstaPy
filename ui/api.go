@@ -71,6 +71,7 @@ func (a *api) Start() error {
 
 	auth := router.Group("/api", validateTokenMiddleware)
 	auth.GET("/tickets/:ticketID", getTicketStatus)
+	auth.GET("/tickets/:ticketID/logs", getTicketLogs)
 	auth.GET("/tickets", myTickets)
 	auth.GET("/me", me)
 	auth.POST("/jobs", runJob)

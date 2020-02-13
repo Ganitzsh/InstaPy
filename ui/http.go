@@ -122,6 +122,34 @@ func saveSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+func getTicketLogs(c *gin.Context) {
+	ticketID := c.Param("ticketID")
+
+	if ticketID == "" {
+		jsonError(c, http.StatusBadRequest, errors.New("Empty ticket id"))
+		return
+	}
+
+	globMut.Lock()
+
+	ticket := tickets[ticketID]
+
+	if ticket == nil {
+		globMut.Unlock()
+		jsonError(c, http.StatusBadRequest, errors.New("Ticket not found"))
+		return
+	}
+
+	t := *ticket
+
+	globMut.Unlock()
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"Logs":    t.Logs,
+		"ErrLogs": t.ErrLogs,
+	})
+}
+
 func getTicketStatus(c *gin.Context) {
 	ticketID := c.Param("ticketID")
 
@@ -203,7 +231,10 @@ func myTickets(c *gin.Context) {
 
 	for _, ticket := range tickets {
 		if ticket.Username == user.Username {
-			ret = append(ret, *ticket)
+			t := *ticket
+			t.Logs = []string{}
+			t.ErrLogs = []string{}
+			ret = append(ret, t)
 		}
 	}
 
