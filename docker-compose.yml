@@ -1,0 +1,55 @@
+version: "3.7"
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - dhparam:/etc/nginx/dhparam
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    network_mode: bridge
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx-proxy-le
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: bridge
+
+  pritunl:
+    image: jippi/pritunl
+    ports:
+      - 1194:1194/udp
+      - 1194:1194/tcp
+    environment:
+      PRITUNL_DEBUG: false
+      PRITUNL_MONGODB_URI: mongodb://mongodb:27017
+      VIRTUAL_HOST: pritunl.ganichot.com
+
+  mongodb:
+    image: mongo:latest
+    netwok_mode: bridge
+
+  instabot:
+    build: .
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      VIRTUAL_HOST: instabot.ganichot.com
+    network_mode: bridge
+
+volumes:
+  conf:
+  vhost:
+  html:
+  dhparam:
+  certs:

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>InstaBot</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+    <style type="text/css" media="screen">
+      .scrollable {
+        overflow-y: scroll;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        padding: 1px;
+      }
+      .scrollable::-webkit-scrollbar { /* WebKit */
+        width: 0;
+        height: 0;
+      }
+    </style>
+  </head>
+  <body class="container">
+    
+    <div class="container columns">
+
+      <div id="login-container" class="column is-one-quarter section">
+
+        <h2 class="title is-4 is-spaced">Login</h4>
+
+        <div v-if="privateState.error !== null" class="container">
+          <b-message title="Danger" type="is-danger" aria-close-label="Close message" @close="privateState.error = null">
+            Invalid credentials
+          </b-message>
+        </div>
+
+        <form v-on:submit.prevent>
+          <b-field label="Username">
+            <b-input v-model="privateState.username"></b-input>
+          </b-field>
+          <b-field label="Password">
+            <b-input type="password" v-model="privateState.password"></b-input>
+          </b-field>
+          <b-button v-if="!privateState.loggedIn" @click="authenticate">Sign In</b-button>
+          <b-button v-if="privateState.loggedIn" @click="logout">Log Out</b-button>
+          <b-loading :is-full-page="privateState.isFullPage" :active.sync="privateState.isLoading" :can-cancel="false"></b-loading>
+        </form>
+
+      </div>
+
+      <div v-if="sharedState.enabled" id="settings" class="columns column">
+        <div class="column is-two-thirds">
+
+          <h2 class="title is-4 is-spaced">Bot settings</h2> 
+
+          <form v-on:submit.prevent>
+            <b-field label="Instagram account">
+              <b-select v-model="privateState.selectedInstagramAccount">
+                <option v-for="account in privateState.instagramAccounts" :value="account" :key="account.ID">
+                  {{ account.Username }}
+                </option>
+              </b-select>
+            </b-field>
+            <b-field label="Password">
+              <b-input type="password" v-model="privateState.igPassword"></b-input>
+            </b-field>
+            <b-field label="Hashtags">
+              <b-taginput placeholder="Add a hashtag" v-model="privateState.settings.Hashtags"></b-taginput>
+            </b-field>
+            <b-field label="Comments">
+              <b-taginput disabled placeholder="Add a comment" v-model="privateState.settings.Comments"></b-taginput>
+            </b-field>
+            <!-- <b-field label="Potency mode"> -->
+            <!--   <b-select v-model="privateState.settings.Potency"> -->
+            <!--     <option value="positive">Positive</option> -->
+            <!--     <option value="negative">Negative</option> -->
+            <!--   </b-select> -->
+            <!-- </b-field> -->
+            <b-field label="Total likes">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.TotalLikes"></b-numberinput>
+            </b-field>
+            <b-field label="Minimum posts">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.MinPosts"></b-numberinput>
+            </b-field>
+            <!-- <b-field label="Likes per user"> -->
+            <!--   <b-numberinput controls-position="compact" v-model="privateState.settings.PerUser"></b-numberinput> -->
+            <!-- </b-field> -->
+            <b-field label="Minimum followers">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.MinFollowers"></b-numberinput>
+            </b-field>
+            <b-field label="Maximum followers">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.MaxFollowers"></b-numberinput>
+            </b-field>
+            <b-field label="Minimum following">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.MinFollowing"></b-numberinput>
+            </b-field>
+            <b-field label="Maximum following">
+              <b-numberinput controls-position="compact" v-model="privateState.settings.MaxFollowing"></b-numberinput>
+            </b-field>
+            <b-button @click="saveSettings">Save settings</b-button> 
+            <b-button :disabled="privateState.runningJobs.length >= 1" @click="runJob">Run BOT</b-button> 
+          </form>
+
+        </div>
+        <div class="column is-one-third">
+
+          <div>
+            
+            <h2 class="title is-4 is-spaced">Running jobs</h2> 
+
+            <div style="height: 50%; margin-bottom: 12px" class="scrollable">
+              <p v-if="!privateState.runningJobs.length">No jobs currently running</p>     
+              <div v-for="job in privateState.runningJobs" class="card">
+                <header class="card-header">
+                  <p class="card-header-title">{{ job.Label }}</p>
+                </header> 
+                <div class="card-content">
+                  <div class="content">
+                    <strong>Account:</strong> {{ job.Settings.Account.Username }} 
+                  </div>
+                </div>
+                <footer class="card-footer">
+                  <a href="#" v-on:click="displayLogs(job.ID)" class="card-footer-item">Logs</a> 
+                </footer>
+              </div>
+            </div>
+
+          </div>
+
+          <div>
+            
+            <h2 class="title is-4 is-spaced">Jobs history</h2> 
+
+            <div style="height: 50%; margin-bottom: 12px;" class="scrollable">
+              <p v-if="!privateState.finishedJobs.length">No jobs history</p>     
+              <div v-for="job in privateState.finishedJobs" class="card" style="margin-bottom: 12px">
+                <header class="card-header">
+                  <p class="card-header-title">{{ job.Label }}</p>
+                </header> 
+                <div class="card-content">
+                  <div class="content">
+                    <strong>Account:</strong> {{ job.Settings.Account.Username }} 
+                  </div>
+                </div>
+                <footer class="card-footer">
+                  <a href="#" v-on:click="displayLogs(job.ID)" class="card-footer-item">Logs</a> 
+                </footer>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-bottom: 12px">
+            <b-button @click="refreshTickets">Refresh</b-button> 
+          </div>
+
+        </div>
+      </div>
+        
+    </div>
+
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js" charset="utf-8"></script>
+    <script src="./assets" charset="utf-8"></script>
+    <script src="./script.js" charset="utf-8"></script>
+
+  </body>
+</html>
