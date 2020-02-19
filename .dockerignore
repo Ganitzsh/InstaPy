@@ -1,5 +1,8 @@
+/app
 /quickstart.py
 /geckodriver
 /tmp
 /.git
+/.github
 Dockerfile
+docker-compose.yml

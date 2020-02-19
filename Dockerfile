@@ -1,6 +1,6 @@
 FROM golang:latest as builder
 
-ADD ./ui /go/src/instabot
+ADD . /go/src/instabot
 WORKDIR /go/src/instabot
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o app .
 
@@ -31,8 +31,8 @@ WORKDIR /app/bot
 RUN pip3 install instapy
 
 COPY --from=builder /go/src/instabot/app /bin/gobot
-COPY --from=builder /go/src/instabot/index.html .
-ADD ./main.py /app
+ADD assets ./assets
+ADD main.py .
 
 RUN chmod +x /bin/gobot
 RUN ls
